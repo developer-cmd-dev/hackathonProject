@@ -1,24 +1,51 @@
-import { APITester } from "./APITester";
+import { useEffect, useState } from "react";
+import type { AuthUser } from "./auth/api";
+import { LandingPage } from "./landing-page/LandingPage";
 import "./index.css";
 
-import logo from "./logo.svg";
-import reactLogo from "./react.svg";
+const tokenKey = "hackathon_token";
+const userKey = "hackathon_user";
 
 export function App() {
-  return (
-    <div className="app">
-      <div className="logo-container">
-        <img src={logo} alt="Bun Logo" className="logo bun-logo" />
-        <img src={reactLogo} alt="React Logo" className="logo react-logo" />
-      </div>
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const saved = localStorage.getItem(userKey);
+    return saved ? (JSON.parse(saved) as AuthUser) : null;
+  });
 
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <APITester />
-    </div>
-  );
+  useEffect(() => {
+    if (user) localStorage.setItem(userKey, JSON.stringify(user));
+  }, [user]);
+
+  function handleSuccess(token: string, nextUser: AuthUser) {
+    localStorage.setItem(tokenKey, token);
+    setUser(nextUser);
+  }
+
+  function logout() {
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem(userKey);
+    setUser(null);
+  }
+
+  if (user) {
+    return (
+      <main className="shell">
+        <section className="welcome-card">
+          <div className="brand-mark">H</div>
+          <p className="eyebrow">ACCOUNT</p>
+          <h1>Welcome, {user.name}.</h1>
+          <p className="muted">{user.email}</p>
+          <div className="profile-row">
+            <span className="avatar">{user.name.charAt(0).toUpperCase()}</span>
+            <span>Signed in with Google</span>
+          </div>
+          <button className="secondary-button" onClick={logout}>Log out</button>
+        </section>
+      </main>
+    );
+  }
+
+  return <LandingPage onAuthenticated={handleSuccess} />;
 }
 
 export default App;
